@@ -1025,3 +1025,48 @@ h1, h2, h3, .font-display {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ================= AJUSTES MOBILE (<= 639PX) ================= */
+@media (max-width: 639px) {
+  #btnGerarPdf {
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .filter-bar {
+    gap: 8px;
+  }
+
+  .filter-pills {
+    width: 100%;
+  }
+
+  .filter-pill {
+    flex: 1;
+    justify-content: center;
+  }
+
+  #filtroGuarita {
+    flex: 1 0 100%;
+    width: 100% !important;
+    height: 38px;
+    border-radius: 999px;
+  }
+
+  .filter-actions {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+  }
+
+  #btnPdfCompras {
+    flex: 1;
+    justify-content: center;
+    height: 38px;
+  }
+
+  #btnAtualizarLista {
+    height: 38px;
+  }
+}
