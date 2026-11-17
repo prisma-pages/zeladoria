@@ -1036,10 +1036,18 @@ h1, h2, h3, .font-display {
 
   .filter-bar {
     gap: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
   }
 
   .filter-pills {
+    display: flex;
+    flex-wrap: wrap;
     width: 100%;
+    gap: 8px;
   }
 
   .filter-pill {
@@ -1052,6 +1060,7 @@ h1, h2, h3, .font-display {
     width: 100% !important;
     height: 38px;
     border-radius: 999px;
+    padding: 0 14px !important;
   }
 
   .filter-actions {
@@ -1068,5 +1077,7 @@ h1, h2, h3, .font-display {
 
   #btnAtualizarLista {
     height: 38px;
+    padding: 0 14px;
+    flex-shrink: 0;
   }
 }
