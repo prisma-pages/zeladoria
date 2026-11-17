@@ -16,6 +16,7 @@ const ACTION_MAP = {
 const PAINEL_AUTH_KEY = 'painel_zelador_auth';
 const SENHA_PAINEL = 'Zeladoria2026';
 const SENHA_EXCLUSAO = 'Ferrovias@2026';
+const SENHA_PDF = 'Ferrovias@2026';
 
 // ============================================================================
 // 2. ESTADO GLOBAL DA APLICAÇÃO
@@ -23,6 +24,8 @@ const SENHA_EXCLUSAO = 'Ferrovias@2026';
 const state = {
   demandas: [],
   filtro: 'Pendente',
+  filtroGuarita: '',
+  guaritaSelecionada: '',
   fotoBase64: '',
   demandaSelecionada: null
 };
@@ -47,8 +50,8 @@ async function callBackend(action, payload = {}) {
       else if (action === 'criar') runner.criarDemanda(payload);
       else if (action === 'atualizar') runner.atualizarDemanda(payload);
       else if (action === 'excluirDemanda') runner.excluirDemanda(payload);
-      else if (action === 'pdf') runner.gerarOrdemServicoPDF();
-      else if (action === 'pdfCompras') runner.gerarListaComprasPDF();
+      else if (action === 'pdf') runner.gerarOrdemServicoPDF(payload);
+      else if (action === 'pdfCompras') runner.gerarListaComprasPDF(payload);
     });
   }
 
@@ -89,6 +92,11 @@ function ativarAba(target) {
   });
   document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
   document.getElementById('tab-' + target).classList.add('active');
+
+  const btnGerarPdf = document.getElementById('btnGerarPdf');
+  if (btnGerarPdf) {
+    btnGerarPdf.style.display = target === 'painel' ? 'inline-flex' : 'none';
+  }
 
   if (target === 'painel' && state.demandas.length === 0) {
     carregarDemandas();
@@ -224,8 +232,16 @@ function comprimirImagem(file, maxWidth, maxBytes) {
 }
 
 // ============================================================================
-// 6. CRUD DE DEMANDAS (CHIPS DE LOCAL, CADASTRO, LISTAGEM E FILTROS)
+// 6. CRUD DE DEMANDAS (GUARITA, CHIPS DE LOCAL, CADASTRO, LISTAGEM E FILTROS)
 // ============================================================================
+document.querySelectorAll('#chipsGuarita .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#chipsGuarita .chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    state.guaritaSelecionada = chip.dataset.value || '';
+  });
+});
+
 const inputLocal = document.getElementById('inputLocal');
 document.querySelectorAll('#chipsLocal .chip').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -239,8 +255,14 @@ document.querySelectorAll('#chipsLocal .chip').forEach(chip => {
 
 document.getElementById('formNovaDemanda').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const guarita = state.guaritaSelecionada;
   const local = inputLocal.value.trim();
   const descricao = document.getElementById('inputDescricao').value.trim();
+
+  if (!guarita) {
+    showToast('Selecione uma guarita (G1 a G5).', 'error');
+    return;
+  }
 
   if (!local || !descricao) {
     showToast('Preencha o local e a descrição.', 'error');
@@ -252,6 +274,7 @@ document.getElementById('formNovaDemanda').addEventListener('submit', async (e) 
 
   try {
     const nova = await callBackend('criar', {
+      guarita,
       local,
       descricao,
       fotoBase64: state.fotoBase64
@@ -260,6 +283,8 @@ document.getElementById('formNovaDemanda').addEventListener('submit', async (e) 
     state.demandas.unshift(nova);
     e.target.reset();
     limparFoto();
+    state.guaritaSelecionada = '';
+    document.querySelectorAll('#chipsGuarita .chip').forEach(c => c.classList.remove('selected'));
     document.querySelectorAll('#chipsLocal .chip').forEach(c => c.classList.remove('selected'));
     showToast('Demanda registrada com sucesso!', 'success');
     renderDemandas();
@@ -300,9 +325,18 @@ document.querySelectorAll('.filter-pill').forEach(pill => {
   });
 });
 
+document.getElementById('filtroGuarita').addEventListener('change', (e) => {
+  state.filtroGuarita = e.target.value;
+  renderDemandas();
+});
+
 function renderDemandas() {
-  const pendentes = state.demandas.filter(d => d.status !== 'Concluída');
-  const concluidas = state.demandas.filter(d => d.status === 'Concluída');
+  const baseDemandas = state.filtroGuarita
+    ? state.demandas.filter(d => d.guarita === state.filtroGuarita)
+    : state.demandas;
+
+  const pendentes = baseDemandas.filter(d => d.status !== 'Concluída');
+  const concluidas = baseDemandas.filter(d => d.status === 'Concluída');
 
   document.getElementById('countPendente').textContent = pendentes.length;
   document.getElementById('countConcluida').textContent = concluidas.length;
@@ -321,6 +355,10 @@ function renderDemandas() {
       ? `<img class="demand-thumb" src="${escapeHtml(item.fotoUrl)}" alt="Foto" loading="lazy" />`
       : `<div class="demand-thumb-empty">Sem foto</div>`;
 
+    const guaritaBadgeHtml = item.guarita
+      ? `<span class="tag-materials" style="font-weight: 700; color: var(--text);">${escapeHtml(item.guarita)}</span>`
+      : '';
+
     const materiaisTrim = item.materiais ? item.materiais.trim() : '';
     const materiaisHtml = materiaisTrim
       ? `<div class="demand-materials">
@@ -338,7 +376,10 @@ function renderDemandas() {
         ${thumbHtml}
         <div class="demand-body">
           <div class="demand-top">
-            <div class="demand-local">${escapeHtml(item.local)}</div>
+            <div class="demand-top-left">
+              <div class="demand-local">${escapeHtml(item.local)}</div>
+              ${guaritaBadgeHtml}
+            </div>
             <span class="status-badge ${isDone ? 'done' : 'pending'}">${isDone ? 'Concluída' : 'Pendente'}</span>
           </div>
           <p class="demand-desc">${escapeHtml(item.descricao)}</p>
@@ -368,7 +409,8 @@ const toggleConcluido = document.getElementById('toggleConcluido');
 function abrirModal(item) {
   state.demandaSelecionada = item;
   document.getElementById('modalLocal').textContent = item.local;
-  document.getElementById('modalMeta').textContent = `ID: ${item.id} • Aberta em ${item.dataCriacao}`;
+  const guaritaMeta = item.guarita ? `Guarita ${item.guarita} • ` : '';
+  document.getElementById('modalMeta').textContent = `${guaritaMeta}ID: ${item.id} • Aberta em ${item.dataCriacao}`;
   document.getElementById('modalDesc').textContent = item.descricao;
   document.getElementById('modalMateriais').value = item.materiais || '';
 
@@ -521,14 +563,62 @@ document.getElementById('formExcluirDemanda').addEventListener('submit', async (
 });
 
 // ============================================================================
-// 8. EXPORTAÇÃO DE ORDEM DE SERVIÇO (PDF A4)
+// 8. EXPORTAÇÃO DE PDFs PROTEGIDA POR SENHA (ORDEM DE SERVIÇO E COMPRAS)
 // ============================================================================
-document.getElementById('btnGerarPdf').addEventListener('click', async () => {
+const modalPdfAuthBackdrop = document.getElementById('modalPdfAuthBackdrop');
+const inputSenhaPdf = document.getElementById('inputSenhaPdf');
+const modalPdfAuthSubtitle = document.getElementById('modalPdfAuthSubtitle');
+let pdfPendingAction = null;
+
+function abrirModalSenhaPdf(tipo) {
+  pdfPendingAction = tipo;
+  modalPdfAuthSubtitle.textContent = tipo === 'pdfCompras'
+    ? 'Informe a senha para gerar a Lista de Compras em PDF'
+    : 'Informe a senha para gerar a Ordem de Serviço em PDF';
+  inputSenhaPdf.value = '';
+  modalPdfAuthBackdrop.classList.add('open');
+  setTimeout(() => inputSenhaPdf.focus(), 50);
+}
+
+function fecharModalSenhaPdf() {
+  modalPdfAuthBackdrop.classList.remove('open');
+  inputSenhaPdf.value = '';
+  pdfPendingAction = null;
+}
+
+document.getElementById('btnFecharPdfAuthModal').addEventListener('click', fecharModalSenhaPdf);
+modalPdfAuthBackdrop.addEventListener('click', (e) => {
+  if (e.target === modalPdfAuthBackdrop) fecharModalSenhaPdf();
+});
+
+document.getElementById('formAuthPdf').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (inputSenhaPdf.value !== SENHA_PDF) {
+    showToast('Senha incorreta!', 'error');
+    inputSenhaPdf.select();
+    return;
+  }
+
+  const acao = pdfPendingAction;
+  fecharModalSenhaPdf();
+
+  if (acao === 'pdf') {
+    await executarGeracaoOrdemServicoPDF();
+  } else if (acao === 'pdfCompras') {
+    await executarGeracaoListaComprasPDF();
+  }
+});
+
+document.getElementById('btnGerarPdf').addEventListener('click', () => {
+  abrirModalSenhaPdf('pdf');
+});
+
+async function executarGeracaoOrdemServicoPDF() {
   const btn = document.getElementById('btnGerarPdf');
   setButtonLoading(btn, true, 'Gerando PDF...');
 
   try {
-    const res = await callBackend('pdf');
+    const res = await callBackend('pdf', { guarita: state.filtroGuarita });
     const link = document.createElement('a');
     link.href = 'data:application/pdf;base64,' + res.base64;
     link.download = res.fileName || 'Ordem_Servico_Zeladoria.pdf';
@@ -542,28 +632,32 @@ document.getElementById('btnGerarPdf').addEventListener('click', async () => {
     setButtonLoading(btn, false, `
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
       <span>Gerar PDF</span>
+      <span>Gerar Ordem de Serviço</span>
     `, true);
   }
-});
+}
 
-// ============================================================================
-// 8.1. EXPORTAÇÃO DE PDF DA LISTA DE COMPRAS (DEMANDAS COM MATERIAIS)
-// ============================================================================
-document.getElementById('btnPdfCompras').addEventListener('click', async () => {
-  const comMateriais = state.demandas.filter(
-    d => d.status !== 'Concluída' && d.materiais && d.materiais.trim() !== ''
-  );
+document.getElementById('btnPdfCompras').addEventListener('click', () => {
+  const comMateriais = state.demandas.filter(d => {
+    const matchStatus = d.status !== 'Concluída' && d.materiais && d.materiais.trim() !== '';
+    const matchGuarita = !state.filtroGuarita || d.guarita === state.filtroGuarita;
+    return matchStatus && matchGuarita;
+  });
 
   if (comMateriais.length === 0) {
     showToast('Nenhuma demanda pendente possui materiais listados.', 'error');
     return;
   }
 
+  abrirModalSenhaPdf('pdfCompras');
+});
+
+async function executarGeracaoListaComprasPDF() {
   const btn = document.getElementById('btnPdfCompras');
   setButtonLoading(btn, true, 'Gerando...', false, true);
 
   try {
-    const res = await callBackend('pdfCompras');
+    const res = await callBackend('pdfCompras', { guarita: state.filtroGuarita });
     const link = document.createElement('a');
     link.href = 'data:application/pdf;base64,' + res.base64;
     link.download = res.fileName || 'Lista_Compras_Zeladoria.pdf';
@@ -583,7 +677,7 @@ document.getElementById('btnPdfCompras').addEventListener('click', async () => {
       <span>PDF Lista de Compras</span>
     `, true);
   }
-});
+}
 
 // ============================================================================
 // 9. UTILITÁRIOS DE UI & INICIALIZAÇÃO
