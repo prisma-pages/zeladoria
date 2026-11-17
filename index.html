@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zeladoria • Gestão de Demandas</title>
+
+  <!-- Tipografia limpa: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <!-- BARRA SUPERIOR FIXA -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-dot" aria-hidden="true">Z</span>
+        <span>Zeladoria</span>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Navegação principal">
+        <button type="button" class="nav-tab active" data-tab="nova">Nova Demanda</button>
+        <button type="button" class="nav-tab" data-tab="painel">Painel do Zelador</button>
+      </nav>
+
+      <button type="button" id="btnGerarPdf" class="btn-pdf">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span>Gerar PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ================= ABA 1: NOVA DEMANDA ================= -->
+    <section id="tab-nova" class="view-section active">
+      <div class="page-header">
+        <h1 class="page-title">Nova Demanda</h1>
+        <p class="page-subtitle">Registre uma ocorrência com foto para a equipe de zeladoria.</p>
+      </div>
+
+      <form id="formNovaDemanda" class="card">
+        <!-- Upload de Foto -->
+        <div class="form-group">
+          <span class="label">Foto do Problema <span class="label-hint">(câmera ou galeria)</span></span>
+
+          <label id="uploadZone" class="upload-zone" for="inputFoto">
+            <input type="file" id="inputFoto" accept="image/*" capture="environment" />
+            <span class="upload-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+            </span>
+            <span class="upload-title">Toque para fotografar ou escolher imagem</span>
+            <span class="upload-desc">Compressão automática para envio rápido (máx. 800px / ~150KB)</span>
+          </label>
+
+          <div id="previewWrapper" class="preview-wrapper">
+            <img id="previewImg" class="preview-img"
+              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+              alt="Preview da foto" />
+            <div class="preview-bar">
+              <span id="previewInfo">Imagem pronta</span>
+              <button type="button" id="btnRemoverFoto" class="btn-ghost-danger">Remover foto</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Local da Demanda -->
+        <div class="form-group">
+          <label class="label" for="inputLocal">Local da Demanda</label>
+          <input type="text" id="inputLocal" class="input" placeholder="Local detalhado" required />
+        </div>
+
+        <!-- Descrição do Serviço -->
+        <div class="form-group">
+          <label class="label" for="inputDescricao">Descrição do Serviço</label>
+          <textarea id="inputDescricao" class="textarea"
+            placeholder="Descreva o problema ou serviço necessário de forma objetiva..." required></textarea>
+        </div>
+
+        <button type="submit" id="btnRegistrar" class="btn-primary">
+          <span>Registrar Demanda</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- ================= ABA 2: PAINEL DO ZELADOR ================= -->
+    <section id="tab-painel" class="view-section">
+      <div class="page-header">
+        <h1 class="page-title">Painel do Zelador</h1>
+        <p class="page-subtitle">Acompanhe pendências, liste materiais e conclua serviços.</p>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-pills">
+          <button type="button" class="filter-pill active-pending" data-filter="Pendente">
+            Pendentes <span class="pill-count" id="countPendente">0</span>
+          </button>
+          <button type="button" class="filter-pill" data-filter="Concluída">
+            Concluídas <span class="pill-count" id="countConcluida">0</span>
+          </button>
+        </div>
+
+        <div class="filter-actions">
+          <button type="button" id="btnPdfCompras" class="btn-refresh btn-pdf-compras">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <span>PDF Lista de Compras</span>
+          </button>
+
+          <button type="button" id="btnAtualizarLista" class="btn-refresh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <div id="demandsList" class="demands-list">
+        <div class="empty-state">Carregando demandas...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL DE DETALHES / EDIÇÃO ================= -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalLocal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalLocal" class="modal-title">Local</h2>
+          <div id="modalMeta" class="modal-meta"></div>
+        </div>
+        <button type="button" id="btnFecharModal" class="modal-close" aria-label="Fechar">×</button>
+      </div>
+
+      <img id="modalPhoto" class="modal-photo"
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Foto da demanda" />
+
+      <div class="label label-tight">Descrição do Serviço</div>
+      <div id="modalDesc" class="modal-desc-box"></div>
+
+      <div class="form-group form-group-compact">
+        <label class="label" for="modalMateriais">Materiais Necessários</label>
+        <textarea id="modalMateriais" class="textarea textarea-compact"
+          placeholder="Ex: 2 lâmpadas LED 12W, fita isolante, escada..."></textarea>
+        <button type="button" id="btnSalvarMateriais" class="btn-secondary">Salvar Materiais</button>
+      </div>
+
+      <button type="button" id="toggleConcluido" class="complete-toggle" role="switch" aria-checked="false">
+        <span class="complete-toggle-text">
+          <strong>Marcar como Concluído</strong>
+          <span id="toggleSubtext">Atualiza o status e registra a data de conclusão</span>
+        </span>
+        <span class="switch-box" aria-hidden="true"></span>
+      </button>
+
+      <div class="modal-danger-zone">
+        <button type="button" id="btnExcluirDemanda" class="btn-danger-outline">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+          <span>Excluir Demanda</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE AUTENTICAÇÃO DO PAINEL ================= -->
+  <div id="modalAuthBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalAuthTitle">
+    <div class="modal-panel modal-panel-sm">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalAuthTitle" class="modal-title">Acesso ao Painel do Zelador</h2>
+          <div class="modal-meta">Área restrita para gerenciamento de demandas</div>
+        </div>
+        <button type="button" id="btnFecharAuthModal" class="modal-close" aria-label="Fechar">×</button>
+      </div>
+
+      <form id="formAuthPainel">
+        <div class="form-group">
+          <label class="label" for="inputSenhaPainel">Senha de Acesso</label>
+          <input type="password" id="inputSenhaPainel" class="input" placeholder="Digite a senha de acesso..."
+            autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn-primary">
+          <span>Acessar Painel</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE CONFIRMAÇÃO DE EXCLUSÃO ================= -->
+  <div id="modalExcluirBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalExcluirTitle">
+    <div class="modal-panel modal-panel-sm">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalExcluirTitle" class="modal-title">Excluir Demanda</h2>
+          <div id="modalExcluirInfo" class="modal-meta"></div>
+        </div>
+        <button type="button" id="btnFecharExcluirModal" class="modal-close" aria-label="Fechar">×</button>
+      </div>
+
+      <p class="modal-warning-text">
+        Esta ação removerá a demanda da planilha e enviará a foto associada para a lixeira do Google Drive.
+      </p>
+
+      <form id="formExcluirDemanda">
+        <div class="form-group">
+          <label class="label" for="inputSenhaExcluir">Senha de Exclusão</label>
+          <input type="password" id="inputSenhaExcluir" class="input" placeholder="Senha para excluir..."
+            autocomplete="off" required />
+        </div>
+        <div class="modal-actions-row">
+          <button type="button" id="btnCancelarExclusao" class="btn-secondary btn-cancel-inline">Cancelar</button>
+          <button type="submit" id="btnConfirmarExclusao" class="btn-danger-solid">
+            <span>Confirmar Exclusão</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js" defer></script>
+</body>
+
+</html>
