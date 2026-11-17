@@ -133,10 +133,10 @@ document.getElementById('formAuthPainel').addEventListener('submit', (e) => {
 });
 
 // ============================================================================
-// 5. COMPRESSÃO DE IMAGEM VIA CANVAS (MAX 800PX / ~150KB JPEG)
+// 5. COMPRESSÃO DE IMAGEM VIA CANVAS (MAX 1280PX / ~350KB JPEG)
 // ============================================================================
-const MAX_WIDTH = 800;
-const MAX_BYTES = 150 * 1024;
+const MAX_WIDTH = 1280;
+const MAX_BYTES = 350 * 1024;
 
 const inputFoto = document.getElementById('inputFoto');
 const uploadZone = document.getElementById('uploadZone');
@@ -173,44 +173,53 @@ function limparFoto() {
 
 function comprimirImagem(file, maxWidth, maxBytes) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Falha ao ler o arquivo.'));
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('Arquivo de imagem inválido.'));
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
 
-        if (width > maxWidth) {
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Arquivo de imagem inválido.'));
+    };
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth || height > maxWidth) {
+        if (width >= height) {
           height = Math.round((height * maxWidth) / width);
           width = maxWidth;
+        } else {
+          width = Math.round((width * maxWidth) / height);
+          height = maxWidth;
         }
+      }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
 
-        let quality = 0.82;
-        let dataUrl = canvas.toDataURL('image/jpeg', quality);
-        let base64 = dataUrl.split(',')[1] || '';
-        let sizeBytes = Math.round((base64.length * 3) / 4);
+      let quality = 0.85;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      let base64 = dataUrl.split(',')[1] || '';
+      let sizeBytes = Math.round((base64.length * 3) / 4);
 
-        // Reduz qualidade iterativamente para manter até ~150KB
-        while (sizeBytes > maxBytes && quality > 0.35) {
-          quality -= 0.1;
-          dataUrl = canvas.toDataURL('image/jpeg', quality);
-          base64 = dataUrl.split(',')[1] || '';
-          sizeBytes = Math.round((base64.length * 3) / 4);
-        }
+      // Reduz qualidade iterativamente para manter até ~350KB
+      while (sizeBytes > maxBytes && quality > 0.35) {
+        quality -= 0.08;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        base64 = dataUrl.split(',')[1] || '';
+        sizeBytes = Math.round((base64.length * 3) / 4);
+      }
 
-        resolve({ dataUrl, sizeBytes });
-      };
-      img.src = ev.target.result;
+      resolve({ dataUrl, sizeBytes });
     };
-    reader.readAsDataURL(file);
+
+    img.src = objectUrl;
   });
 }
 
