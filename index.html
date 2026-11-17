@@ -31,7 +31,7 @@
         <button type="button" class="nav-tab" data-tab="painel">Painel do Zelador</button>
       </nav>
 
-      <button type="button" id="btnGerarPdf" class="btn-pdf">
+      <button type="button" id="btnGerarPdf" class="btn-pdf" style="display: none;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -40,6 +40,7 @@
           <line x1="16" y1="17" x2="8" y2="17"></line>
         </svg>
         <span>Gerar PDF</span>
+        <span>Gerar Ordem de Serviço</span>
       </button>
     </div>
   </header>
@@ -82,6 +83,18 @@
           </div>
         </div>
 
+        <!-- Guarita -->
+        <div class="form-group">
+          <span class="label">Guarita</span>
+          <div id="chipsGuarita" class="chips-grid" role="group" aria-label="Selecionar Guarita">
+            <button type="button" class="chip" data-value="G1">G1</button>
+            <button type="button" class="chip" data-value="G2">G2</button>
+            <button type="button" class="chip" data-value="G3">G3</button>
+            <button type="button" class="chip" data-value="G4">G4</button>
+            <button type="button" class="chip" data-value="G5">G5</button>
+          </div>
+        </div>
+
         <!-- Local da Demanda -->
         <div class="form-group">
           <label class="label" for="inputLocal">Local da Demanda</label>
@@ -116,6 +129,14 @@
           <button type="button" class="filter-pill" data-filter="Concluída">
             Concluídas <span class="pill-count" id="countConcluida">0</span>
           </button>
+          <select id="filtroGuarita" class="input" style="width: auto; padding: 6px 12px; font-size: 13px;" aria-label="Filtrar por Guarita">
+            <option value="">Todas as Guaritas</option>
+            <option value="G1">G1</option>
+            <option value="G2">G2</option>
+            <option value="G3">G3</option>
+            <option value="G4">G4</option>
+            <option value="G5">G5</option>
+          </select>
         </div>
 
         <div class="filter-actions">
@@ -245,6 +266,30 @@
             <span>Confirmar Exclusão</span>
           </button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE SENHA PARA GERAR PDF ================= -->
+  <div id="modalPdfAuthBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalPdfAuthTitle">
+    <div class="modal-panel modal-panel-sm">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalPdfAuthTitle" class="modal-title">Autorização para PDF</h2>
+          <div id="modalPdfAuthSubtitle" class="modal-meta">Informe a senha para gerar o relatório</div>
+        </div>
+        <button type="button" id="btnFecharPdfAuthModal" class="modal-close" aria-label="Fechar">×</button>
+      </div>
+
+      <form id="formAuthPdf">
+        <div class="form-group">
+          <label class="label" for="inputSenhaPdf">Senha de Acesso</label>
+          <input type="password" id="inputSenhaPdf" class="input" placeholder="Digite a senha para gerar o PDF..."
+            autocomplete="off" required />
+        </div>
+        <button type="submit" class="btn-primary">
+          <span>Confirmar e Gerar PDF</span>
+        </button>
       </form>
     </div>
   </div>
